@@ -1,55 +1,157 @@
 const url = "https://2u-data-curriculum-team.s3.amazonaws.com/dataviz-classroom/v1.1/14-Interactive-Web-Visualizations/02-Homework/samples.json";
 
-// Promise Pennding 
-const dataPromise = d3.json(url);
-console.log(" Data Promise:", dataPromise);
+// Initialize arrays
+let otu_ids = [];
+let otu_labels = [];
+let sample_values = [];
+let id = [];
 
-// initialize the array
-let otu_ids = []
-let otu_labels = []
-let sample_values = []
-let id = []
 
-// Fetch the Json file and console log it
-d3.json(url).then(function(data){
-console.log(data)
 
-let sortedbysamplevalue = data.samples.sort((a, b) => b.sample_values - a.sample_values);
-    
-    for (let i = 0; i < data.samples.length; i++) {
-        //console.log(data.samples[i].id);
-        id.push(data.samples[i].id);
-        //console.log(data.samples[i].otu_ids);
-        otu_ids.push(data.samples[i].otu_ids);
-        //console.log(data.samples[i].sample_values);
-        sample_values.push(data.samples[i].sample_values);
-        //console.log(data.samples[i].otu_labels);
-        otu_labels.push(data.samples[i].otu_labels);
-    }
+
+// Fetch the JSON file
+d3.json(url).then(function(data) {
+  console.log(data);
+
+  // Sort samples by sample_values
+  let sortedBySampleValue = data.samples.sort((a, b) => b.sample_values - a.sample_values);
+
+  // Populate Data.samples arrays
+  for (let i = 0; i < sortedBySampleValue.length; i++) {
+    id.push(sortedBySampleValue[i].id);
+    otu_ids.push(sortedBySampleValue[i].otu_ids);
+    sample_values.push(sortedBySampleValue[i].sample_values);
+    otu_labels.push(sortedBySampleValue[i].otu_labels);
+  }
+  
+  
+
+
+  // Populate drop-down menu by ID
+  var selectElement = document.getElementById("selDataset");
+
+  // Loop through the data.sample[i].ID and create options
+  for (var i = 0; i < data.samples.length; i++) {
+    var option = document.createElement("option");
+    option.value = data.samples[i].id;
+    option.text = data.samples[i].id;
+
+    // Append the <option> element to the <select> element
+    selectElement.appendChild(option);
+  }
+
+  // Initialize the default bar chart
+  init();
+  // Initialize the default bubble chart
+  init2();
+  // initialize the default demographic info
+ //init3();
+
+
 });
 
-//console.log(sample_values);
+// Create the default Bar Chart
+function init() {
 
-//Taking the top OTU_IDs by sample_value 
+  let trace1 = {
+    x: sample_values.slice(0,10).reverse(),
+    y: otu_ids.slice(0, 10).map(otu_ID => 10  `OTU ${otu_ID}`).reverse(),
+    text: otu_labels,
+    orientation: 'h',
+    type: 'bar'
+  };
+  
+  let layout = {
+    title: 'Top OTUs per Individual',
+    margin: {t:000,l:150},
+  };
 
-let  sample_values_10 = sample_values.slice(0, 10);
-let otu_ids_10 = otu_ids.slice(0, 10);
-let otu_labels_10 = otu_labels.slice(0, 10);
+  Plotly.newPlot('bar', trace1, layout);
+} init()
 
-// create a horizental bar chart
+// Create the default Bubble Chart
+function init2() {
+  
+  let trace2 = {
+    x: otu_ids,
+    y: sample_values,
+    mode: 'markers',
+    marker: {
+      size: sample_values,
+      color: otu_ids,
+      colorscale: otu_ids,
+      },
+    text: otu_labels,
+    type: 'scatter'
+  };
 
-let trace1 = {
-  type: 'bar',
-  x: sample_values_10,
-  y: otu_ids_10,
-  orientation: 'h',
-  text: otu_labels_10,
+  let traceData2 = [trace2];
+  let layout = {
+    showlegend: true,
+    height: 700,
+    width: 700,
+  };
+
+  Plotly.newPlot('bubble', traceData2, layout);
+} init2()
+
+function init3() {
+
+}
+
+//
+
+
+//  Function called by DOM changes
+function optionChanged(selectedOption) {
+  //  Fetch the JSON file
+  d3.json(url).then(function(data) {
+  console.log(data)
+  let otu_ids = [];
+  let otu_labels = [];
+  let sample_values = [];
+  let id = [];
+
+  //  Find the index of the selected option in the 'id' array
+  let index = id.indexOf(selectedOption );
+
+  //Extract data for the selected option
+  let newSampleValues = sample_values[index];
+  let newOtuIds = otu_ids[index];
+  let newOtuLabels = otu_labels[index];
+
+// Update the bar chart with new data
+let updatedBarTrace = {
+  x: [newOtuIds],
+  y: [newSampleValues],
+  text: [newOtuLabels],
+  type: 'bar'
+};
+Plotly.newPlot('bar', [updatedBarTrace]);
+
+// Update the bubble chart with new data
+let updatedBubbleTrace = {
+  x: newOtuIds,
+  y: newSampleValues,
+  mode: 'markers',
   marker: {
-    color: 'rgb(142,124,195)'
-  }
+    size: newSampleValues,
+    color: newOtuIds,
+    colorscale: newOtuIds,
+  },
+  text: newOtuLabels,
+  type: 'scatter'
 };
-let traceData = [trace1];
-let layout = {
-  title: 'OTUs per Individual',
-};
-Plotly.newPlot('div', traceData, layout );
+Plotly.newPlot('bubble', [updatedBubbleTrace]);
+}
+
+
+// Attach the event listener with the new parameter
+d3.selectAll("#selDataset").on("change", function() {
+  // Get the value of the selected option
+  var selectedOption = d3.select(this).property("value");
+  
+  // Call the optionChanged function with the selected option as a parameter
+  optionChanged(selectedOption);
+});
+
