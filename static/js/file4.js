@@ -41,19 +41,21 @@ function init() {
 
 // Updates demographic information based on the selected sample
     function updateDemographicInfo(selectedValue) {
-         // Get the panel body elemenv
-        var panelBody = document.getElementById('sample-metadata');
-        // Clear existing content
-        panelBody.innerHTML = '';
-        // Get demographic info based on the selected value
-        let demographicData = metadata.find(item => item.id === selectedValue);
-         // Loop through the demographic info and add it to the panel body
-        for (let key in demographicData) {
-            if (metadata.hasOwnProperty(key)) {
-                var pElement = document.createElement('p');
-                pElement.innerHTML = `<strong>${key}:</strong> ${metadata[key]}`;
-                panelBody.appendChild(pElement);
-        }}};
+        d3.json(url).then((data) => {
+            let metadata = data.metadata;
+            let resultArray = metadata.filter(
+              (sampleObj) => sampleObj.id == selectedValue
+            );
+            let result = resultArray[0];
+            let PANEL = d3.select("#sample-metadata");
+        
+            PANEL.html("");
+            for (key in result) {
+              PANEL.append("h6").text(`${key.toUpperCase()}: ${result[key]}`);
+            }
+          });
+        }
+         
 
 // Updates the charts based on the selected sample
     function updateBarCharts(selectedValue) {
@@ -72,7 +74,7 @@ function init() {
             title: "Top 10 OTUs per Individuals",
             margin: {
            l: 150,
-           t: 000,
+           t: 100,
            }};
       Plotly.newPlot("bar", [trace1], layout);}
      
